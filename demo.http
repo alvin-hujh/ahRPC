@@ -1,0 +1,19 @@
+### 查询用户
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service":"cn.hjh.ahrpc.demo.api.UserService",
+  "method":"findById",
+  "args": [100]
+}
+
+###查询订单
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service":"cn.hjh.ahrpc.demo.api.OrderService",
+  "method":"findById",
+  "args": [3]
+}
