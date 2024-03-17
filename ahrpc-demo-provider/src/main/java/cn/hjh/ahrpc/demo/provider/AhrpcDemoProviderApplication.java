@@ -35,13 +35,21 @@ public class AhrpcDemoProviderApplication {
     @Bean
     ApplicationRunner providerRun() {
         return x -> {
-//            RpcRequest request = new RpcRequest();
-//            request.setService("cn.hjh.ahrpc.demo.api.UserService");
-//            request.setMethod("findById");
-//            request.setArgs(new Object[]{100});
-//
-//            RpcResponse rpcResponse = providerBootstrap.invoke(request);
-//            System.out.println("return:" + rpcResponse.getData());
+            RpcRequest request = new RpcRequest();
+            request.setService("cn.hjh.ahrpc.demo.api.UserService");
+            request.setMethodSign("findById@1_class java.lang.Integer");
+            request.setArgs(new Object[]{100});
+
+            RpcResponse rpcResponse = providerBootstrap.invoke(request);
+            System.out.println("return:" + rpcResponse.getData());
+//            test 2 parameters
+            RpcRequest request2 = new RpcRequest();
+            request2.setService("cn.hjh.ahrpc.demo.api.UserService");
+            request2.setMethodSign("findById@2_class java.lang.Integer_class java.lang.String");
+            request2.setArgs(new Object[]{198,"yj"});
+
+            RpcResponse rpcResponse2 = providerBootstrap.invoke(request2);
+            System.out.println("return:" + rpcResponse2.getData());
         };
     }
 

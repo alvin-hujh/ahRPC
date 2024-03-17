@@ -2,14 +2,22 @@ package cn.hjh.ahrpc.core.consummr;
 
 import cn.hjh.ahrpc.core.api.RpcRequest;
 import cn.hjh.ahrpc.core.api.RpcResponse;
+import cn.hjh.ahrpc.core.util.MethodUtils;
+import cn.hjh.ahrpc.core.util.TypeUtils;
+
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static cn.hjh.ahrpc.core.util.TypeUtils.cast;
 
 /**
  * @ClassName : AHInvocationHandler
@@ -29,31 +37,55 @@ public class AHInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-        if (method.getName().equals("toString")||
-                method.getName().equals("getClass")||
-                method.getName().equals("hashCode")||
-                method.getName().equals("equals")||
-                method.getName().equals("clone")||
-                method.getName().equals("notify")||
-                method.getName().equals("notifyAll")||
-                method.getName().equals("wait")
-        ){
+        if (MethodUtils.checkLocalMethod(method.getName())) {
             return null;
         }
 
         RpcRequest rpcRequest = new RpcRequest();
         rpcRequest.setService(service.getCanonicalName());
-        rpcRequest.setMethod(method.getName());
+        rpcRequest.setMethodSign(MethodUtils.methodSign(method));
         rpcRequest.setArgs(args);
 
         RpcResponse rpcResponse = post(rpcRequest);
         if (rpcResponse.status) {
             Object data = rpcResponse.getData();
+            Class<?> type = method.getReturnType();
             if (data instanceof JSONObject) {
                 JSONObject jsonResult = (JSONObject) rpcResponse.getData();
                 return jsonResult.toJavaObject(method.getReturnType());
+            } else if (data instanceof JSONArray jsonArray) {
+                Object[] array = jsonArray.toArray();
+                if (type.isArray()) {
+                    Class<?> componentType = type.getComponentType();
+                    Object resultArray = Array.newInstance(componentType, array.length);
+                    for (int i = 0; i < array.length; i++) {
+                        if (componentType.isPrimitive() || componentType.getPackageName().startsWith("java")) {
+                            Array.set(resultArray, i, array[i]);
+                        } else {
+                            Object castObject = cast(array[i], componentType);
+                            Array.set(resultArray, i, castObject);
+                        }
+                    }
+                    return resultArray;
+                } else if (List.class.isAssignableFrom(type)) {
+                    List<Object> resultList = new ArrayList<>(array.length);
+                    Type genericReturnType = method.getGenericReturnType();
+                    System.out.println(genericReturnType);
+                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
+                        Type actualType = parameterizedType.getActualTypeArguments()[0];
+                        System.out.println(actualType);
+                        for (Object o : array) {
+                            resultList.add(cast(o, (Class<?>) actualType));
+                        }
+                    } else {
+                        resultList.addAll(Arrays.asList(array));
+                    }
+                    return resultList;
+                } else {
+                    return null;
+                }
             } else {
-                return data;
+                return TypeUtils.cast(data, method.getReturnType());
             }
         } else {
             Exception ex = rpcResponse.getEx();

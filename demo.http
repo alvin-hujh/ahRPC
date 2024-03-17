@@ -4,8 +4,18 @@ Content-Type: application/json
 
 {
   "service":"cn.hjh.ahrpc.demo.api.UserService",
-  "method":"findById",
+  "methodSign":"findById@1_class java.lang.Integer",
   "args": [100]
+}
+
+### 查询用户 2 个参数
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service":"cn.hjh.ahrpc.demo.api.UserService",
+  "methodSign":"findById@2_class java.lang.Integer_class java.lang.String",
+  "args": [98,"sx"]
 }
 
 ###查询订单
@@ -14,6 +24,6 @@ Content-Type: application/json
 
 {
   "service":"cn.hjh.ahrpc.demo.api.OrderService",
-  "method":"findById",
+  "methodSign":"findById@1_class java.lang.Integer",
   "args": [3]
 }

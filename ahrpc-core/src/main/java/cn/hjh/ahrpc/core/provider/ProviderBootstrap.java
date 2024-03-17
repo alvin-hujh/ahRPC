@@ -3,15 +3,21 @@ package cn.hjh.ahrpc.core.provider;
 import cn.hjh.ahrpc.core.annotation.AHProvider;
 import cn.hjh.ahrpc.core.api.RpcResponse;
 import cn.hjh.ahrpc.core.api.RpcRequest;
+import cn.hjh.ahrpc.core.meta.ProviderMeta;
+import cn.hjh.ahrpc.core.util.MethodUtils;
+import cn.hjh.ahrpc.core.util.TypeUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @ClassName : ProviderBootstrap
@@ -24,7 +30,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     ApplicationContext applicationContext;
 
-    private Map<String, Object> skeleton = new HashMap<>();
+    private MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
 
     @PostConstruct
     public void buildProviders() {
@@ -39,27 +45,63 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     private void getInstance(Object x) {
         Class<?> itfer = x.getClass().getInterfaces()[0];
-        skeleton.put(itfer.getCanonicalName(), x);
+        for (Method method : x.getClass().getMethods()) {
+            if (MethodUtils.checkLocalMethod(method.getName())) {
+                continue;
+            }
+            createProvider(itfer, x, method);
+        }
+//        skeleton.put(itfer.getCanonicalName(), x);
+    }
+
+    private void createProvider(Class<?> itfer, Object x, Method method) {
+        ProviderMeta providerMeta = new ProviderMeta();
+        providerMeta.setMethod(method);
+        providerMeta.setServiceImpl(x);
+        providerMeta.setMethodSign(MethodUtils.methodSign(method));
+        System.out.println("create a new provider  -> " + providerMeta);
+        skeleton.add(itfer.getCanonicalName(), providerMeta);
     }
 
     public RpcResponse invoke(RpcRequest request) {
-        Object bean = skeleton.get(request.getService());
         RpcResponse rpcResponse = new RpcResponse();
-        Method method = findMethod(bean.getClass(), request.getMethod());
-        //bean.getClass().getMethod(request.getMethod());
+
+        String methodSign = request.getMethodSign();
+        List<ProviderMeta> providerMetas = skeleton.get(request.getService());
+
+
         try {
+            ProviderMeta meta = findProviderMeta(providerMetas, methodSign);
+            Method method = meta.getMethod();
             assert method != null;
-            Object result = method.invoke(bean, request.getArgs());
+            Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
+            Object result = method.invoke(meta.getServiceImpl(), args);
             rpcResponse.setStatus(true);
             rpcResponse.setData(result);
         } catch (InvocationTargetException e) {
-           rpcResponse.setStatus(false);
-           rpcResponse.setEx(new RuntimeException(e.getTargetException().getMessage()));
-        }catch (IllegalAccessException e){
+            rpcResponse.setStatus(false);
+            rpcResponse.setEx(new RuntimeException(e.getTargetException().getMessage()));
+        } catch (IllegalAccessException e) {
             rpcResponse.setStatus(false);
             rpcResponse.setEx(new RuntimeException(e.getMessage()));
         }
         return rpcResponse;
+    }
+
+    private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
+        if (args == null || args.length == 0) return args;
+        Object[] actuals = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            actuals[i] = TypeUtils.cast(args[i], parameterTypes[i]);
+        }
+        return actuals;
+    }
+
+    private ProviderMeta findProviderMeta(List<ProviderMeta> providerMetas, String methodSign) {
+        Optional<ProviderMeta> optional = providerMetas.stream().filter(x ->
+                x.getMethodSign().equals(methodSign)
+        ).findFirst();
+        return optional.orElse(null);
     }
 
     private Method findMethod(Class<?> aClass, String methodName) {

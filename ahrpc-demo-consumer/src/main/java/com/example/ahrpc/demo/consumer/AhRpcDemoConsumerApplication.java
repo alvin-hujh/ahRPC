@@ -13,6 +13,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
+import java.util.Arrays;
+
 @SpringBootApplication
 @Import({ConsumerConfig.class})
 public class AhRpcDemoConsumerApplication {
@@ -31,14 +33,26 @@ public class AhRpcDemoConsumerApplication {
     @Bean
     public ApplicationRunner consumer_runner() {
         return x -> {
-//            User user = userService.findById(1);
-//            System.out.println(user);
+
+            int[] ids = userService.getIds();
+            System.out.println(Arrays.toString(ids));
+            System.out.println(Arrays.toString(userService.getLongIds()));
+            System.out.println(Arrays.toString(userService.getIds(new int[]{4, 5, 6})));
+            System.out.println("---> userName = " + userService.getUserName(new User(1, "张三")));
+            Long longId = userService.getLongId(999l);
+            System.out.println("---> longId = "+longId);
+            User user = userService.findById(1);
+            System.out.println(user);
             int id = userService.getId(90);
             System.out.println("id = " + id);
-//            Order order = orderService.findById(2);
-//            System.out.println(order);
-//            orderService.toString();
-//            demo2.test();
+            User user1 = userService.findById(3, "hjh");
+            System.out.println(user1);
+            System.out.println("---> name not args = " + userService.getName());
+            System.out.println("---> name one arg = " + userService.getName(234));
+            Order order = orderService.findById(2);
+            System.out.println(order);
+            orderService.toString();
+            demo2.test();
 
 //            Order order404 = orderService.findById(404);
 //            System.out.println(order404);
