@@ -1,7 +1,6 @@
 package cn.hjh.ahrpc.core.consummr;
 
-import cn.hjh.ahrpc.core.api.RpcRequest;
-import cn.hjh.ahrpc.core.api.RpcResponse;
+import cn.hjh.ahrpc.core.api.*;
 import cn.hjh.ahrpc.core.util.MethodUtils;
 import cn.hjh.ahrpc.core.util.TypeUtils;
 
@@ -29,9 +28,13 @@ public class AHInvocationHandler implements InvocationHandler {
     final static MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
 
     Class<?> service;
+    RpcContext rpcContext;
+    List<String> providers;
 
-    public AHInvocationHandler(Class<?> clazz) {
+    public AHInvocationHandler(Class<?> clazz, RpcContext rpcContext, List<String> providers) {
         this.service = clazz;
+        this.rpcContext = rpcContext;
+        this.providers = providers;
     }
 
     @Override
@@ -46,7 +49,10 @@ public class AHInvocationHandler implements InvocationHandler {
         rpcRequest.setMethodSign(MethodUtils.methodSign(method));
         rpcRequest.setArgs(args);
 
-        RpcResponse rpcResponse = post(rpcRequest);
+        List<String> urls = rpcContext.getRouter().route(providers);
+        String url = (String) (rpcContext.getLoadBalancer().choose(urls));
+
+        RpcResponse rpcResponse = post(rpcRequest, url);
         if (rpcResponse.status) {
             Object data = rpcResponse.getData();
             Class<?> type = method.getReturnType();
@@ -102,11 +108,11 @@ public class AHInvocationHandler implements InvocationHandler {
             .connectTimeout(1, TimeUnit.SECONDS)
             .build();
 
-    private RpcResponse post(RpcRequest rpcRequest) {
+    private RpcResponse post(RpcRequest rpcRequest, String url) {
         String reqJson = JSON.toJSONString(rpcRequest);
         System.out.println("=== reqJson ===" + reqJson);
         Request request = new Request.Builder()
-                .url("http://localhost:8080/")
+                .url(url)
                 .post(RequestBody.create(reqJson, JSON_TYPE))
                 .build();
         RpcResponse rpcResponse;

@@ -12,11 +12,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 
 @SpringBootApplication
 @Import({ConsumerConfig.class})
+@RestController
 public class AhRpcDemoConsumerApplication {
 
     @AHConsumer
@@ -26,6 +29,10 @@ public class AhRpcDemoConsumerApplication {
     @Autowired
     Demo2 demo2;
 
+    @RequestMapping("/")
+    public User consumerFindById(int id ){
+        return userService.findById(id);
+    }
     public static void main(String[] args) {
         SpringApplication.run(AhRpcDemoConsumerApplication.class, args);
     }

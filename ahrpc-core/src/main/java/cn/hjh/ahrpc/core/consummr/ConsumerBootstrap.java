@@ -1,11 +1,18 @@
 package cn.hjh.ahrpc.core.consummr;
 
 import cn.hjh.ahrpc.core.annotation.AHConsumer;
+import cn.hjh.ahrpc.core.api.LoadBalancer;
+import cn.hjh.ahrpc.core.api.RegistryCenter;
+import cn.hjh.ahrpc.core.api.Router;
+import cn.hjh.ahrpc.core.api.RpcContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -23,11 +30,35 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConsumerBootstrap implements ApplicationContextAware {
+public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAware {
+    /**
+     * 获取所有的装配 bean
+     */
     ApplicationContext applicationContext;
+    /**
+     * 获取所有的环境变量
+     */
+    Environment environment;
+
     private Map<String, Object> stub = new HashMap<>();
 
     public void start() {
+
+        Router router = applicationContext.getBean(Router.class);
+        LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
+        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
+
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setRouter(router);
+        rpcContext.setLoadBalancer(loadBalancer);
+
+//        String urls = environment.getProperty("ahrpc.providers");
+
+//        if (Strings.isBlank(urls)) {
+//            System.out.println("=== provider is empty ===");
+//        }
+//        String[] providers = urls.split(",");
+
         String[] names = applicationContext.getBeanDefinitionNames();
         for (String name : names) {
             Object bean = applicationContext.getBean(name);
@@ -42,7 +73,8 @@ public class ConsumerBootstrap implements ApplicationContextAware {
                     String serviceName = service.getCanonicalName();
                     Object consumer = stub.get(serviceName);
                     if (consumer == null) {
-                        consumer = createConsumer(service);
+                        consumer = createFromRegister(service, rpcContext, rc);
+//                                createConsumer(service, rpcContext, List.of(providers));
                     }
                     f.setAccessible(true);
                     f.set(bean, consumer);
@@ -53,8 +85,16 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         }
     }
 
-    private Object createConsumer(Class<?> service) {
-        return Proxy.newProxyInstance(service.getClassLoader(), new Class[]{service}, new AHInvocationHandler(service));
+    private Object createFromRegister(Class<?> service, RpcContext rpcContext, RegistryCenter rc) {
+        String serviceName = service.getCanonicalName();
+       List<String> providers =  rc.fetchAll(serviceName);
+       return createConsumer(service,rpcContext,providers);
+    }
+
+    private Object createConsumer(Class<?> service, RpcContext rpcContext, List<String> providers) {
+
+        return Proxy.newProxyInstance(service.getClassLoader(),
+                new Class[]{service}, new AHInvocationHandler(service, rpcContext, providers));
     }
 
     private List<Field> findAnnotatedField(Class<?> aClass) {
