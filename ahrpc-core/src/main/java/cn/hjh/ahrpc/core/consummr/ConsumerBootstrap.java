@@ -5,6 +5,8 @@ import cn.hjh.ahrpc.core.api.LoadBalancer;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.api.Router;
 import cn.hjh.ahrpc.core.api.RpcContext;
+import cn.hjh.ahrpc.core.registry.ChangeListener;
+import cn.hjh.ahrpc.core.registry.Event;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -88,6 +90,13 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
     private Object createFromRegister(Class<?> service, RpcContext rpcContext, RegistryCenter rc) {
         String serviceName = service.getCanonicalName();
        List<String> providers =  rc.fetchAll(serviceName);
+       rc.subscribe(serviceName, new ChangeListener() {
+           @Override
+           public void reFresh(Event event) {
+               providers.clear();
+               providers.addAll(event.getNodes());
+           }
+       });
        return createConsumer(service,rpcContext,providers);
     }
 

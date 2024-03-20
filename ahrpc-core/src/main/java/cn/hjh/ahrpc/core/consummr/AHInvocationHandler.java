@@ -110,6 +110,7 @@ public class AHInvocationHandler implements InvocationHandler {
 
     private RpcResponse post(RpcRequest rpcRequest, String url) {
         String reqJson = JSON.toJSONString(rpcRequest);
+        System.out.println("=== reqURL ===" + url);
         System.out.println("=== reqJson ===" + reqJson);
         Request request = new Request.Builder()
                 .url(url)

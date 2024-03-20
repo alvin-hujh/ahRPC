@@ -5,6 +5,7 @@ import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.api.Router;
 import cn.hjh.ahrpc.core.cluster.RandomLoadBalancer;
 import cn.hjh.ahrpc.core.cluster.RandomRibonLoadBalancer;
+import cn.hjh.ahrpc.core.registry.ZKRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -53,7 +54,7 @@ public class ConsumerConfig {
 
     @Bean(initMethod = "start",destroyMethod = "stop")
     public RegistryCenter consumer_rc(){
-        return new RegistryCenter.StaticRegistryCenter(List.of(services.split(",")));
+        return new ZKRegistryCenter();
     }
 
 }

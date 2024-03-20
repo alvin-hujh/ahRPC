@@ -1,5 +1,7 @@
 package cn.hjh.ahrpc.core.api;
 
+import cn.hjh.ahrpc.core.registry.ChangeListener;
+
 import java.util.List;
 
 /**
@@ -49,7 +51,7 @@ public interface RegistryCenter {
     /**
      * 订阅变更
      */
-//    void subscribe();
+    void subscribe(String service, ChangeListener listener);
 
 
     class StaticRegistryCenter implements RegistryCenter {
@@ -84,6 +86,11 @@ public interface RegistryCenter {
         @Override
         public List<String> fetchAll(String service) {
             return providers;
+        }
+
+        @Override
+        public void subscribe(String service, ChangeListener listener) {
+
         }
     }
 }

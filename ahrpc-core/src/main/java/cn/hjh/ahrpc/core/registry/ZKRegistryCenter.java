@@ -1,14 +1,16 @@
 package cn.hjh.ahrpc.core.registry;
 
 import cn.hjh.ahrpc.core.api.RegistryCenter;
+import lombok.SneakyThrows;
 import org.apache.curator.RetryPolicy;
-import org.apache.curator.RetrySleeper;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName : ZKRegistryCenter
@@ -78,6 +80,34 @@ public class ZKRegistryCenter implements RegistryCenter {
 
     @Override
     public List<String> fetchAll(String service) {
-        return null;
+        String servicePath = "/" + service;
+        List<String> nodes = null;
+        try {
+            // 判断服务是否存在
+            System.out.println("=====> start to fetchAll client from ZK client <=====");
+            nodes = client.getChildren().forPath(servicePath);
+            if (nodes == null || nodes.size()==0)return nodes;
+            nodes = nodes.stream()
+                    .map(x -> "http://" + x.replace("_", ":") )
+                    .collect(Collectors.toList());
+            System.out.println("=====> fetchAll client from ZK client success = "+nodes);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return nodes;
+    }
+
+    @SneakyThrows
+    @Override
+    public void subscribe(String service, ChangeListener listener) {
+        final TreeCache cache = TreeCache.newBuilder(client,"/"+service)
+                .setCacheData(true).setMaxDepth(2).build();
+        cache.getListenable().addListener(((curatorFramework, treeCacheEvent) -> {
+            List<String> nodes = fetchAll(service);
+            listener.reFresh(new Event(nodes));
+        })
+
+        );
+        cache.start();
     }
 }
