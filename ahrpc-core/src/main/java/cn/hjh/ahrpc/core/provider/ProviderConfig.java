@@ -25,7 +25,13 @@ public class ProviderConfig {
         return new ProviderBootstrap();
     }
 
-    @Bean(initMethod = "start",destroyMethod = "stop")
+    @Bean
+    ProvierInvoker provierInvoker(@Autowired ProviderBootstrap providerBootstrap){
+        //providerBootstrap 已经在 spring 容器里面了，可以直接取到
+        return new ProvierInvoker(providerBootstrap);
+    }
+
+    @Bean //(initMethod = "start",destroyMethod = "stop")
     public RegistryCenter provider_rc(){
         return new ZKRegistryCenter();
     }

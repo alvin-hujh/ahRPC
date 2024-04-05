@@ -2,11 +2,8 @@ package cn.hjh.ahrpc.core.provider;
 
 import cn.hjh.ahrpc.core.annotation.AHProvider;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
-import cn.hjh.ahrpc.core.api.RpcResponse;
-import cn.hjh.ahrpc.core.api.RpcRequest;
 import cn.hjh.ahrpc.core.meta.ProviderMeta;
 import cn.hjh.ahrpc.core.util.MethodUtils;
-import cn.hjh.ahrpc.core.util.TypeUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
@@ -17,13 +14,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @ClassName : ProviderBootstrap
@@ -35,7 +29,7 @@ import java.util.Optional;
 public class ProviderBootstrap implements ApplicationContextAware {
 
     ApplicationContext applicationContext;
-
+    RegistryCenter rc;
     private MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
 
     private String instance;
@@ -46,14 +40,15 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @PostConstruct
     public void init() {
         Map<String, Object> providers = applicationContext.getBeansWithAnnotation(AHProvider.class);
+        rc = applicationContext.getBean(RegistryCenter.class);
         providers.forEach((x, y) -> System.out.println(x));
-//        skeleton.putAll(providers);
         providers.values().forEach(
                 x -> getInstance(x)
         );
     }
 
     public void start() throws UnknownHostException {
+        rc.start();
         String ip = InetAddress.getLocalHost().getHostAddress();
         instance = ip + "_" + port;
         skeleton.keySet().forEach(this::registerService);
@@ -61,16 +56,16 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     @PreDestroy
     public void stop() {
+        System.out.println("===> unregister all service!");
         skeleton.keySet().forEach(this::unRegisterService);
+        rc.stop();
     }
 
     private void unRegisterService(String service) {
-        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
         rc.unRegister(service, instance);
     }
 
     private void registerService(String service) {
-        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
         rc.register(service, instance);
 
     }
@@ -93,55 +88,5 @@ public class ProviderBootstrap implements ApplicationContextAware {
         providerMeta.setMethodSign(MethodUtils.methodSign(method));
         System.out.println("create a new provider  -> " + providerMeta);
         skeleton.add(itfer.getCanonicalName(), providerMeta);
-    }
-
-    public RpcResponse invoke(RpcRequest request) {
-        RpcResponse rpcResponse = new RpcResponse();
-
-        String methodSign = request.getMethodSign();
-        List<ProviderMeta> providerMetas = skeleton.get(request.getService());
-
-
-        try {
-            ProviderMeta meta = findProviderMeta(providerMetas, methodSign);
-            Method method = meta.getMethod();
-            assert method != null;
-            Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
-            Object result = method.invoke(meta.getServiceImpl(), args);
-            rpcResponse.setStatus(true);
-            rpcResponse.setData(result);
-        } catch (InvocationTargetException e) {
-            rpcResponse.setStatus(false);
-            rpcResponse.setEx(new RuntimeException(e.getTargetException().getMessage()));
-        } catch (IllegalAccessException e) {
-            rpcResponse.setStatus(false);
-            rpcResponse.setEx(new RuntimeException(e.getMessage()));
-        }
-        return rpcResponse;
-    }
-
-    private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
-        if (args == null || args.length == 0) return args;
-        Object[] actuals = new Object[args.length];
-        for (int i = 0; i < args.length; i++) {
-            actuals[i] = TypeUtils.cast(args[i], parameterTypes[i]);
-        }
-        return actuals;
-    }
-
-    private ProviderMeta findProviderMeta(List<ProviderMeta> providerMetas, String methodSign) {
-        Optional<ProviderMeta> optional = providerMetas.stream().filter(x ->
-                x.getMethodSign().equals(methodSign)
-        ).findFirst();
-        return optional.orElse(null);
-    }
-
-    private Method findMethod(Class<?> aClass, String methodName) {
-        for (Method method : aClass.getMethods()) {
-            if (method.getName().equals(methodName)) {
-                return method;
-            }
-        }
-        return null;
     }
 }

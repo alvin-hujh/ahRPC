@@ -1,8 +1,16 @@
 package cn.hjh.ahrpc.core.util;
 
+import cn.hjh.ahrpc.core.api.RpcResponse;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -63,5 +71,47 @@ public class TypeUtils {
         return null;
 
 
+    }
+
+
+    public static Object castMethodResult(Method method, RpcResponse rpcResponse, Object data) {
+        Class<?> type = method.getReturnType();
+        if (data instanceof JSONObject) {
+            JSONObject jsonResult = (JSONObject) rpcResponse.getData();
+            return jsonResult.toJavaObject(method.getReturnType());
+        } else if (data instanceof JSONArray jsonArray) {
+            Object[] array = jsonArray.toArray();
+            if (type.isArray()) {
+                Class<?> componentType = type.getComponentType();
+                Object resultArray = Array.newInstance(componentType, array.length);
+                for (int i = 0; i < array.length; i++) {
+                    if (componentType.isPrimitive() || componentType.getPackageName().startsWith("java")) {
+                        Array.set(resultArray, i, array[i]);
+                    } else {
+                        Object castObject = cast(array[i], componentType);
+                        Array.set(resultArray, i, castObject);
+                    }
+                }
+                return resultArray;
+            } else if (List.class.isAssignableFrom(type)) {
+                List<Object> resultList = new ArrayList<>(array.length);
+                Type genericReturnType = method.getGenericReturnType();
+                System.out.println(genericReturnType);
+                if (genericReturnType instanceof ParameterizedType parameterizedType) {
+                    Type actualType = parameterizedType.getActualTypeArguments()[0];
+                    System.out.println(actualType);
+                    for (Object o : array) {
+                        resultList.add(cast(o, (Class<?>) actualType));
+                    }
+                } else {
+                    resultList.addAll(Arrays.asList(array));
+                }
+                return resultList;
+            } else {
+                return null;
+            }
+        } else {
+            return TypeUtils.cast(data, method.getReturnType());
+        }
     }
 }

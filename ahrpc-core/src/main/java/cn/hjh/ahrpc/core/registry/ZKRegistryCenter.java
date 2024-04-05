@@ -30,13 +30,14 @@ public class ZKRegistryCenter implements RegistryCenter {
                 .retryPolicy(policy)
                 .build();
         client.start();
-        System.out.println("=====> ZK client started success! <=====");
+        System.out.println("=====> ZK client started success!");
     }
 
     @Override
     public void stop() {
         if (client != null) {
             client.close();
+            System.out.println("=====> ZK client stop success!");
         }
 
     }
@@ -51,9 +52,9 @@ public class ZKRegistryCenter implements RegistryCenter {
             }
             // 创建示例的临时性节点
             String instancePath = servicePath + "/" + instance;
-            System.out.println("=====> start to register to ZK client <=====");
+            System.out.println("=====> start to register to ZK client server=" + servicePath);
             client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
-            System.out.println("=====> register to ZK client success! <=====");
+            System.out.println("=====> register to ZK client success!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -70,9 +71,9 @@ public class ZKRegistryCenter implements RegistryCenter {
             }
             // 删除实例节点
             String instancePath = servicePath + "/" + instance;
-            System.out.println("=====> start to unRegister to ZK client <=====");
+            System.out.println("=====> start to unRegister to ZK client");
             client.delete().quietly().forPath(instancePath);
-            System.out.println("=====> unRegister to ZK client success! <=====");
+            System.out.println("=====> unRegister to ZK client success!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -84,13 +85,13 @@ public class ZKRegistryCenter implements RegistryCenter {
         List<String> nodes = null;
         try {
             // 判断服务是否存在
-            System.out.println("=====> start to fetchAll client from ZK client <=====");
+            System.out.println("=====> start to fetchAll client from ZK client");
             nodes = client.getChildren().forPath(servicePath);
-            if (nodes == null || nodes.size()==0)return nodes;
+            if (nodes == null || nodes.size() == 0) return nodes;
             nodes = nodes.stream()
-                    .map(x -> "http://" + x.replace("_", ":") )
+                    .map(x -> "http://" + x.replace("_", ":"))
                     .collect(Collectors.toList());
-            System.out.println("=====> fetchAll client from ZK client success = "+nodes);
+            System.out.println("=====> fetchAll client from ZK client success = " + nodes);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -100,12 +101,12 @@ public class ZKRegistryCenter implements RegistryCenter {
     @SneakyThrows
     @Override
     public void subscribe(String service, ChangeListener listener) {
-        final TreeCache cache = TreeCache.newBuilder(client,"/"+service)
+        final TreeCache cache = TreeCache.newBuilder(client, "/" + service)
                 .setCacheData(true).setMaxDepth(2).build();
         cache.getListenable().addListener(((curatorFramework, treeCacheEvent) -> {
-            List<String> nodes = fetchAll(service);
-            listener.reFresh(new Event(nodes));
-        })
+                    List<String> nodes = fetchAll(service);
+                    listener.reFresh(new Event(nodes));
+                })
 
         );
         cache.start();

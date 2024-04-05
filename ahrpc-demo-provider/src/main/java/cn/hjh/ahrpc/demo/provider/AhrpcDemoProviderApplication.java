@@ -1,9 +1,9 @@
 package cn.hjh.ahrpc.demo.provider;
 
-import cn.hjh.ahrpc.core.api.RpcResponse;
 import cn.hjh.ahrpc.core.api.RpcRequest;
-import cn.hjh.ahrpc.core.provider.ProviderBootstrap;
+import cn.hjh.ahrpc.core.api.RpcResponse;
 import cn.hjh.ahrpc.core.provider.ProviderConfig;
+import cn.hjh.ahrpc.core.provider.ProvierInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -18,8 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Import({ProviderConfig.class})
 public class AhrpcDemoProviderApplication {
+
     @Autowired
-    ProviderBootstrap providerBootstrap;
+    private ProvierInvoker provierInvoker;
 
     public static void main(String[] args) {
         SpringApplication.run(AhrpcDemoProviderApplication.class, args);
@@ -29,7 +30,7 @@ public class AhrpcDemoProviderApplication {
 
     @RequestMapping("/")
     public RpcResponse invoke(@RequestBody RpcRequest request) {
-        return providerBootstrap.invoke(request);
+        return provierInvoker.invoke(request);
     }
 
     @Bean
@@ -40,7 +41,7 @@ public class AhrpcDemoProviderApplication {
             request.setMethodSign("findById@1_class java.lang.Integer");
             request.setArgs(new Object[]{100});
 
-            RpcResponse rpcResponse = providerBootstrap.invoke(request);
+            RpcResponse rpcResponse = provierInvoker.invoke(request);
             System.out.println("return:" + rpcResponse.getData());
 //            test 2 parameters
             RpcRequest request2 = new RpcRequest();
@@ -48,7 +49,7 @@ public class AhrpcDemoProviderApplication {
             request2.setMethodSign("findById@2_class java.lang.Integer_class java.lang.String");
             request2.setArgs(new Object[]{198,"yj"});
 
-            RpcResponse rpcResponse2 = providerBootstrap.invoke(request2);
+            RpcResponse rpcResponse2 = provierInvoker.invoke(request2);
             System.out.println("return:" + rpcResponse2.getData());
         };
     }

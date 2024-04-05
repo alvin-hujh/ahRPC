@@ -7,6 +7,7 @@ import cn.hjh.ahrpc.core.api.Router;
 import cn.hjh.ahrpc.core.api.RpcContext;
 import cn.hjh.ahrpc.core.registry.ChangeListener;
 import cn.hjh.ahrpc.core.registry.Event;
+import cn.hjh.ahrpc.core.util.MethodUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -67,7 +68,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
 //            if (!name.contains("ahRpcDemoConsumerApplication")) {
 //                return;
 //            }
-            List<Field> fields = findAnnotatedField(bean.getClass());
+            List<Field> fields = MethodUtils.findAnnotatedField(bean.getClass(), AHConsumer.class);
             fields.stream().forEach(f -> {
                 System.out.println("====>" + f.getName());
                 try {
@@ -89,15 +90,15 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
 
     private Object createFromRegister(Class<?> service, RpcContext rpcContext, RegistryCenter rc) {
         String serviceName = service.getCanonicalName();
-       List<String> providers =  rc.fetchAll(serviceName);
-       rc.subscribe(serviceName, new ChangeListener() {
-           @Override
-           public void reFresh(Event event) {
-               providers.clear();
-               providers.addAll(event.getNodes());
-           }
-       });
-       return createConsumer(service,rpcContext,providers);
+        List<String> providers = rc.fetchAll(serviceName);
+        rc.subscribe(serviceName, new ChangeListener() {
+            @Override
+            public void reFresh(Event event) {
+                providers.clear();
+                providers.addAll(event.getNodes());
+            }
+        });
+        return createConsumer(service, rpcContext, providers);
     }
 
     private Object createConsumer(Class<?> service, RpcContext rpcContext, List<String> providers) {
@@ -106,17 +107,5 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
                 new Class[]{service}, new AHInvocationHandler(service, rpcContext, providers));
     }
 
-    private List<Field> findAnnotatedField(Class<?> aClass) {
-        List<Field> result = new ArrayList<>();
-        while (aClass != null) {
-            Field[] fields = aClass.getDeclaredFields();
-            for (Field field : fields) {
-                if (field.isAnnotationPresent(AHConsumer.class)) {
-                    result.add(field);
-                }
-            }
-            aClass = aClass.getSuperclass();
-        }
-        return result;
-    }
+
 }

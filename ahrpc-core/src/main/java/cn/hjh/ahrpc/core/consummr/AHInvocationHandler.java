@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.*;
@@ -55,51 +56,13 @@ public class AHInvocationHandler implements InvocationHandler {
         RpcResponse rpcResponse = post(rpcRequest, url);
         if (rpcResponse.status) {
             Object data = rpcResponse.getData();
-            Class<?> type = method.getReturnType();
-            if (data instanceof JSONObject) {
-                JSONObject jsonResult = (JSONObject) rpcResponse.getData();
-                return jsonResult.toJavaObject(method.getReturnType());
-            } else if (data instanceof JSONArray jsonArray) {
-                Object[] array = jsonArray.toArray();
-                if (type.isArray()) {
-                    Class<?> componentType = type.getComponentType();
-                    Object resultArray = Array.newInstance(componentType, array.length);
-                    for (int i = 0; i < array.length; i++) {
-                        if (componentType.isPrimitive() || componentType.getPackageName().startsWith("java")) {
-                            Array.set(resultArray, i, array[i]);
-                        } else {
-                            Object castObject = cast(array[i], componentType);
-                            Array.set(resultArray, i, castObject);
-                        }
-                    }
-                    return resultArray;
-                } else if (List.class.isAssignableFrom(type)) {
-                    List<Object> resultList = new ArrayList<>(array.length);
-                    Type genericReturnType = method.getGenericReturnType();
-                    System.out.println(genericReturnType);
-                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
-                        Type actualType = parameterizedType.getActualTypeArguments()[0];
-                        System.out.println(actualType);
-                        for (Object o : array) {
-                            resultList.add(cast(o, (Class<?>) actualType));
-                        }
-                    } else {
-                        resultList.addAll(Arrays.asList(array));
-                    }
-                    return resultList;
-                } else {
-                    return null;
-                }
-            } else {
-                return TypeUtils.cast(data, method.getReturnType());
-            }
+            return TypeUtils.castMethodResult(method, rpcResponse, data);
         } else {
             Exception ex = rpcResponse.getEx();
-//            ex.printStackTrace();
-//            System.out.println(ex);
             throw new RuntimeException(ex.getMessage());
         }
     }
+
 
     OkHttpClient client = new OkHttpClient.Builder()
             .connectionPool(new ConnectionPool(8, 60, TimeUnit.SECONDS))

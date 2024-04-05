@@ -1,7 +1,13 @@
 package cn.hjh.ahrpc.core.util;
 
+import cn.hjh.ahrpc.core.annotation.AHConsumer;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @ClassName : MethodUtils
@@ -33,12 +39,26 @@ public class MethodUtils {
         }
     }
 
-    public static String methodSign(Method method){
+    public static String methodSign(Method method) {
         StringBuilder sb = new StringBuilder(method.getName());
         sb.append("@").append(method.getParameterCount());
         Arrays.stream(method.getParameters()).forEach(parameter ->
                 sb.append("_").append(parameter.getParameterizedType()));
         return sb.toString();
+    }
+
+    public static List<Field> findAnnotatedField(Class<?> aClass, Class<? extends Annotation> annotation) {
+        List<Field> result = new ArrayList<>();
+        while (aClass != null) {
+            Field[] fields = aClass.getDeclaredFields();
+            for (Field field : fields) {
+                if (field.isAnnotationPresent(annotation)) {
+                    result.add(field);
+                }
+            }
+            aClass = aClass.getSuperclass();
+        }
+        return result;
     }
 
 }
