@@ -2,6 +2,7 @@ package cn.hjh.ahrpc.core.provider;
 
 import cn.hjh.ahrpc.core.annotation.AHProvider;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.meta.ProviderMeta;
 import cn.hjh.ahrpc.core.util.MethodUtils;
 import jakarta.annotation.PostConstruct;
@@ -32,7 +33,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     RegistryCenter rc;
     private MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
 
-    private String instance;
+    private InstanceMeta instance;
     @Value("${server.port}")
     private String port;
 
@@ -50,7 +51,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     public void start() throws UnknownHostException {
         rc.start();
         String ip = InetAddress.getLocalHost().getHostAddress();
-        instance = ip + "_" + port;
+        instance = InstanceMeta.http(ip, Integer.valueOf(port));
         skeleton.keySet().forEach(this::registerService);
     }
 

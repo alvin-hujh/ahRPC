@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RpcResponse {
+public class RpcResponse<T> {
     /**
      * 结果状态
      * 成功为 true
@@ -17,7 +17,7 @@ public class RpcResponse {
     /**
      * 数据
      */
-    public Object data;
+    public T data;
 
     /**
      * 异常

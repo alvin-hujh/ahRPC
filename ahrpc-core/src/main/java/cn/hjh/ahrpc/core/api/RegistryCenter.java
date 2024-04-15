@@ -1,5 +1,6 @@
 package cn.hjh.ahrpc.core.api;
 
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.registry.ChangeListener;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public interface RegistryCenter {
      *
      * @param service
      */
-    void register(String service, String instance);
+    void register(String service, InstanceMeta instance);
 
     /**
      * 取消注册
@@ -36,7 +37,7 @@ public interface RegistryCenter {
      * @param service
      * @param instance
      */
-    void unRegister(String service, String instance);
+    void unRegister(String service, InstanceMeta instance);
 
 
 //    consumer 侧
@@ -46,7 +47,7 @@ public interface RegistryCenter {
      *
      * @return
      */
-    List<String> fetchAll(String service);
+    List<InstanceMeta> fetchAll(String service);
 
     /**
      * 订阅变更
@@ -56,9 +57,9 @@ public interface RegistryCenter {
 
     class StaticRegistryCenter implements RegistryCenter {
 
-        List<String> providers;
+        List<InstanceMeta> providers;
 
-        public StaticRegistryCenter(List<String> providers) {
+        public StaticRegistryCenter(List<InstanceMeta> providers) {
             this.providers = providers;
 
         }
@@ -74,17 +75,17 @@ public interface RegistryCenter {
         }
 
         @Override
-        public void register(String service, String instance) {
+        public void register(String service, InstanceMeta instance) {
 
         }
 
         @Override
-        public void unRegister(String service, String instance) {
+        public void unRegister(String service, InstanceMeta instance) {
 
         }
 
         @Override
-        public List<String> fetchAll(String service) {
+        public List<InstanceMeta> fetchAll(String service) {
             return providers;
         }
 

@@ -5,6 +5,7 @@ import cn.hjh.ahrpc.core.api.LoadBalancer;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.api.Router;
 import cn.hjh.ahrpc.core.api.RpcContext;
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.registry.ChangeListener;
 import cn.hjh.ahrpc.core.registry.Event;
 import cn.hjh.ahrpc.core.util.MethodUtils;
@@ -54,20 +55,9 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
         RpcContext rpcContext = new RpcContext();
         rpcContext.setRouter(router);
         rpcContext.setLoadBalancer(loadBalancer);
-
-//        String urls = environment.getProperty("ahrpc.providers");
-
-//        if (Strings.isBlank(urls)) {
-//            System.out.println("=== provider is empty ===");
-//        }
-//        String[] providers = urls.split(",");
-
         String[] names = applicationContext.getBeanDefinitionNames();
         for (String name : names) {
             Object bean = applicationContext.getBean(name);
-//            if (!name.contains("ahRpcDemoConsumerApplication")) {
-//                return;
-//            }
             List<Field> fields = MethodUtils.findAnnotatedField(bean.getClass(), AHConsumer.class);
             fields.stream().forEach(f -> {
                 System.out.println("====>" + f.getName());
@@ -77,7 +67,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
                     Object consumer = stub.get(serviceName);
                     if (consumer == null) {
                         consumer = createFromRegister(service, rpcContext, rc);
-//                                createConsumer(service, rpcContext, List.of(providers));
+                        stub.put(serviceName,consumer);
                     }
                     f.setAccessible(true);
                     f.set(bean, consumer);
@@ -90,7 +80,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
 
     private Object createFromRegister(Class<?> service, RpcContext rpcContext, RegistryCenter rc) {
         String serviceName = service.getCanonicalName();
-        List<String> providers = rc.fetchAll(serviceName);
+        List<InstanceMeta> providers = rc.fetchAll(serviceName);
         rc.subscribe(serviceName, new ChangeListener() {
             @Override
             public void reFresh(Event event) {
@@ -101,7 +91,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
         return createConsumer(service, rpcContext, providers);
     }
 
-    private Object createConsumer(Class<?> service, RpcContext rpcContext, List<String> providers) {
+    private Object createConsumer(Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
 
         return Proxy.newProxyInstance(service.getClassLoader(),
                 new Class[]{service}, new AHInvocationHandler(service, rpcContext, providers));

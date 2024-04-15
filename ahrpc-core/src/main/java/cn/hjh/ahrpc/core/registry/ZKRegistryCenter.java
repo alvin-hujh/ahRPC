@@ -1,6 +1,7 @@
 package cn.hjh.ahrpc.core.registry;
 
 import cn.hjh.ahrpc.core.api.RegistryCenter;
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import lombok.SneakyThrows;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
  */
 public class ZKRegistryCenter implements RegistryCenter {
     private CuratorFramework client = null;
+    private TreeCache cache = null;
 
     @Override
     public void start() {
@@ -36,6 +38,7 @@ public class ZKRegistryCenter implements RegistryCenter {
     @Override
     public void stop() {
         if (client != null) {
+            cache.close();
             client.close();
             System.out.println("=====> ZK client stop success!");
         }
@@ -43,7 +46,7 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void register(String service, String instance) {
+    public void register(String service, InstanceMeta instance) {
         String servicePath = "/" + service;
         try {
             // 创建服务的持久化节点
@@ -51,7 +54,7 @@ public class ZKRegistryCenter implements RegistryCenter {
                 client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
             }
             // 创建示例的临时性节点
-            String instancePath = servicePath + "/" + instance;
+            String instancePath = servicePath + "/" + instance.toPath();
             System.out.println("=====> start to register to ZK client server=" + servicePath);
             client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
             System.out.println("=====> register to ZK client success!");
@@ -62,7 +65,7 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void unRegister(String service, String instance) {
+    public void unRegister(String service, InstanceMeta instance) {
         String servicePath = "/" + service;
         try {
             // 判断服务是否存在
@@ -70,7 +73,7 @@ public class ZKRegistryCenter implements RegistryCenter {
                 return;
             }
             // 删除实例节点
-            String instancePath = servicePath + "/" + instance;
+            String instancePath = servicePath + "/" + instance.toPath();
             System.out.println("=====> start to unRegister to ZK client");
             client.delete().quietly().forPath(instancePath);
             System.out.println("=====> unRegister to ZK client success!");
@@ -80,31 +83,35 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public List<String> fetchAll(String service) {
+    public List<InstanceMeta> fetchAll(String service) {
         String servicePath = "/" + service;
         List<String> nodes = null;
+        List<InstanceMeta> instanceMetas = null;
         try {
             // 判断服务是否存在
             System.out.println("=====> start to fetchAll client from ZK client");
             nodes = client.getChildren().forPath(servicePath);
-            if (nodes == null || nodes.size() == 0) return nodes;
-            nodes = nodes.stream()
-                    .map(x -> "http://" + x.replace("_", ":"))
-                    .collect(Collectors.toList());
-            System.out.println("=====> fetchAll client from ZK client success = " + nodes);
+//            nodes = nodes.stream()
+//                    .map(x -> "http://" + x.replace("_", ":"))
+//                    .collect(Collectors.toList());
+//            System.out.println("=====> fetchAll client from ZK client success = " + nodes);
+            instanceMetas = nodes.stream().map(x -> {
+                String[] strs = x.split("_");
+                return InstanceMeta.http(strs[0], Integer.valueOf(strs[1]));
+            }).collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return nodes;
+        return instanceMetas;
     }
 
     @SneakyThrows
     @Override
     public void subscribe(String service, ChangeListener listener) {
-        final TreeCache cache = TreeCache.newBuilder(client, "/" + service)
+        cache = TreeCache.newBuilder(client, "/" + service)
                 .setCacheData(true).setMaxDepth(2).build();
         cache.getListenable().addListener(((curatorFramework, treeCacheEvent) -> {
-                    List<String> nodes = fetchAll(service);
+                    List<InstanceMeta> nodes = fetchAll(service);
                     listener.reFresh(new Event(nodes));
                 })
 

@@ -1,5 +1,6 @@
 package cn.hjh.ahrpc.core.registry;
 
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import lombok.Data;
 
 import java.util.List;
@@ -12,9 +13,9 @@ import java.util.List;
  */
 @Data
 public class Event {
-    List<String> nodes;
+    List<InstanceMeta> nodes;
 
-    public Event(List<String> nodes) {
+    public Event(List<InstanceMeta> nodes) {
         this.nodes=nodes;
     }
 }
