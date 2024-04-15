@@ -89,23 +89,24 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     }
 
-    private void getInstance(Object x) {
-        Class<?> itfer = x.getClass().getInterfaces()[0];
-        for (Method method : x.getClass().getMethods()) {
+    private void getInstance(Object impl) {
+        Class<?> service = impl.getClass().getInterfaces()[0];
+        for (Method method : impl.getClass().getMethods()) {
             if (MethodUtils.checkLocalMethod(method.getName())) {
                 continue;
             }
-            createProvider(itfer, x, method);
+            createProvider(service, impl, method);
         }
 //        skeleton.put(itfer.getCanonicalName(), x);
     }
 
-    private void createProvider(Class<?> itfer, Object x, Method method) {
-        ProviderMeta providerMeta = new ProviderMeta();
-        providerMeta.setMethod(method);
-        providerMeta.setServiceImpl(x);
-        providerMeta.setMethodSign(MethodUtils.methodSign(method));
+    private void createProvider(Class<?> service, Object impl, Method method) {
+        ProviderMeta providerMeta =  ProviderMeta.builder()
+                .serviceImpl(impl)
+                .method(method)
+                .methodSign(MethodUtils.methodSign(method))
+                .build();
         System.out.println("create a new provider  -> " + providerMeta);
-        skeleton.add(itfer.getCanonicalName(), providerMeta);
+        skeleton.add(service.getCanonicalName(), providerMeta);
     }
 }

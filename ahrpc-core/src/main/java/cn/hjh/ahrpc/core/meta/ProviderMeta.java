@@ -1,6 +1,7 @@
 package cn.hjh.ahrpc.core.meta;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import java.lang.reflect.Method;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ProviderMeta {
 
     /**

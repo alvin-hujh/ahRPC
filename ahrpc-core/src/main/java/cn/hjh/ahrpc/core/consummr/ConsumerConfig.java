@@ -3,17 +3,15 @@ package cn.hjh.ahrpc.core.consummr;
 import cn.hjh.ahrpc.core.api.LoadBalancer;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.api.Router;
-import cn.hjh.ahrpc.core.cluster.RandomLoadBalancer;
 import cn.hjh.ahrpc.core.cluster.RandomRibonLoadBalancer;
-import cn.hjh.ahrpc.core.registry.ZKRegistryCenter;
+import cn.hjh.ahrpc.core.meta.InstanceMeta;
+import cn.hjh.ahrpc.core.registry.zk.ZKRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-
-import java.util.List;
 
 /**
  * @ClassName : ConsumerConfig
@@ -41,14 +39,14 @@ public class ConsumerConfig {
     }
 
     @Bean
-    public LoadBalancer loadBalancer() {
+    public LoadBalancer<InstanceMeta> loadBalancer() {
 //        return LoadBalancer.Default;
 //        return new RandomLoadBalancer();
         return new RandomRibonLoadBalancer();
     }
 
     @Bean
-    public Router router() {
+    public Router<InstanceMeta> router() {
         return Router.Default;
     }
 

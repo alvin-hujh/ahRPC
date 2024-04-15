@@ -1,15 +1,12 @@
 package cn.hjh.ahrpc.core.provider;
 
 import cn.hjh.ahrpc.core.api.RegistryCenter;
-import cn.hjh.ahrpc.core.consummr.ConsumerBootstrap;
-import cn.hjh.ahrpc.core.registry.ZKRegistryCenter;
+import cn.hjh.ahrpc.core.registry.zk.ZKRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-
-import java.util.List;
 
 /**
  * @ClassName : ProviderConfig
