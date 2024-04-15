@@ -4,6 +4,7 @@ import cn.hjh.ahrpc.core.annotation.AHProvider;
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.meta.ProviderMeta;
+import cn.hjh.ahrpc.core.meta.ServiceMeta;
 import cn.hjh.ahrpc.core.util.MethodUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -37,6 +38,13 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @Value("${server.port}")
     private String port;
 
+    @Value("${app.id}")
+    private String application;
+    @Value("${app.namespace}")
+    private String namespace;
+    @Value("${app.env}")
+    private String env;
+
     @SneakyThrows
     @PostConstruct
     public void init() {
@@ -63,11 +71,21 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
 
     private void unRegisterService(String service) {
-        rc.unRegister(service, instance);
+        ServiceMeta serviceMeta = ServiceMeta.builder()
+                .application(application)
+                .env(env)
+                .namespace(namespace)
+                .name(service).build();
+        rc.unRegister(serviceMeta, instance);
     }
 
     private void registerService(String service) {
-        rc.register(service, instance);
+        ServiceMeta serviceMeta = ServiceMeta.builder()
+                .application(application)
+                .env(env)
+                .namespace(namespace)
+                .name(service).build();
+        rc.register(serviceMeta, instance);
 
     }
 

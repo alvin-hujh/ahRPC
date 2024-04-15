@@ -1,2 +1,9 @@
 server:
   port: 8081
+ahrpc:
+  zkServer: localhost:2181
+  zkRoot: ahRpc
+app:
+  id: app1
+  env: dev
+  namespace: public

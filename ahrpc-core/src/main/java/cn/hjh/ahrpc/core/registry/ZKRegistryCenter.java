@@ -2,6 +2,7 @@ package cn.hjh.ahrpc.core.registry;
 
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.meta.InstanceMeta;
+import cn.hjh.ahrpc.core.meta.ServiceMeta;
 import lombok.SneakyThrows;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -9,6 +10,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,16 +25,21 @@ public class ZKRegistryCenter implements RegistryCenter {
     private CuratorFramework client = null;
     private TreeCache cache = null;
 
+    @Value("${ahrpc.zkServer}")
+    private String zkServer;
+    @Value("${ahrpc.zkRoot}")
+    private String zkRoot;
+
     @Override
     public void start() {
         RetryPolicy policy = new ExponentialBackoffRetry(1000, 3);
         client = CuratorFrameworkFactory.builder()
-                .connectString("localhost:2181")
-                .namespace("ahRpc")
+                .connectString(zkServer)
+                .namespace(zkRoot)
                 .retryPolicy(policy)
                 .build();
         client.start();
-        System.out.println("=====> ZK client started success!");
+        System.out.println("=====> ZK client started to server[+" + zkServer + "/" + zkRoot + "] " + " success!");
     }
 
     @Override
@@ -46,8 +53,8 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void register(String service, InstanceMeta instance) {
-        String servicePath = "/" + service;
+    public void register(ServiceMeta service, InstanceMeta instance) {
+        String servicePath = "/" + service.toPath();
         try {
             // 创建服务的持久化节点
             if (client != null && client.checkExists().forPath(servicePath) == null) {
@@ -65,8 +72,8 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void unRegister(String service, InstanceMeta instance) {
-        String servicePath = "/" + service;
+    public void unRegister(ServiceMeta service, InstanceMeta instance) {
+        String servicePath = "/" + service.toPath();
         try {
             // 判断服务是否存在
             if (client == null || client.checkExists() == null) {
@@ -83,8 +90,8 @@ public class ZKRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public List<InstanceMeta> fetchAll(String service) {
-        String servicePath = "/" + service;
+    public List<InstanceMeta> fetchAll(ServiceMeta service) {
+        String servicePath = "/" + service.toPath();
         List<String> nodes = null;
         List<InstanceMeta> instanceMetas = null;
         try {
@@ -107,8 +114,8 @@ public class ZKRegistryCenter implements RegistryCenter {
 
     @SneakyThrows
     @Override
-    public void subscribe(String service, ChangeListener listener) {
-        cache = TreeCache.newBuilder(client, "/" + service)
+    public void subscribe(ServiceMeta service, ChangeListener listener) {
+        cache = TreeCache.newBuilder(client, "/" + service.toPath())
                 .setCacheData(true).setMaxDepth(2).build();
         cache.getListenable().addListener(((curatorFramework, treeCacheEvent) -> {
                     List<InstanceMeta> nodes = fetchAll(service);
