@@ -49,7 +49,7 @@ public class AHInvocationHandler implements InvocationHandler {
         List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
         InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
 
-        RpcResponse rpcResponse = httpInvoker.post(rpcRequest, instance.toString());
+        RpcResponse rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
         if (rpcResponse.status) {
             Object data = rpcResponse.getData();
             return TypeUtils.castMethodResult(method, rpcResponse, data);
