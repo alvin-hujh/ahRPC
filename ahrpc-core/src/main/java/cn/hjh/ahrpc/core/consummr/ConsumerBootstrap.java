@@ -13,6 +13,7 @@ import cn.hjh.ahrpc.core.util.MethodUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -31,6 +32,7 @@ import java.util.Map;
  * @Author : hujh
  * @Date: 2024-03-15 00:10
  */
+@Slf4j
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -67,7 +69,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
             Object bean = applicationContext.getBean(name);
             List<Field> fields = MethodUtils.findAnnotatedField(bean.getClass(), AHConsumer.class);
             fields.stream().forEach(f -> {
-                System.out.println("====>" + f.getName());
+                log.info("====>" + f.getName());
                 try {
                     Class<?> service = f.getType();
                     String serviceName = service.getCanonicalName();

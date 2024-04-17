@@ -3,7 +3,7 @@ package cn.hjh.ahrpc.core.util;
 import cn.hjh.ahrpc.core.api.RpcResponse;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import org.jetbrains.annotations.Nullable;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -20,6 +20,7 @@ import java.util.List;
  * @Author : hujh
  * @Date: 2024-03-17 19:48
  */
+@Slf4j
 public class TypeUtils {
     public static Object cast(Object origin, Class<?> type) {
         if (origin == null) return null;
@@ -29,8 +30,8 @@ public class TypeUtils {
             return origin;
         }
 
-        if(type.isArray()) {
-            if(origin instanceof List list) {
+        if (type.isArray()) {
+            if (origin instanceof List list) {
                 origin = list.toArray();
             }
             int length = Array.getLength(origin);
@@ -47,7 +48,7 @@ public class TypeUtils {
             return resultArray;
         }
 
-        if (origin instanceof HashMap map){
+        if (origin instanceof HashMap map) {
             JSONObject jsonObject = new JSONObject(map);
             return jsonObject.toJavaObject(type);
         }
@@ -96,10 +97,10 @@ public class TypeUtils {
             } else if (List.class.isAssignableFrom(type)) {
                 List<Object> resultList = new ArrayList<>(array.length);
                 Type genericReturnType = method.getGenericReturnType();
-                System.out.println(genericReturnType);
+                log.debug(genericReturnType.toString());
                 if (genericReturnType instanceof ParameterizedType parameterizedType) {
                     Type actualType = parameterizedType.getActualTypeArguments()[0];
-                    System.out.println(actualType);
+                    log.debug(actualType.toString());
                     for (Object o : array) {
                         resultList.add(cast(o, (Class<?>) actualType));
                     }

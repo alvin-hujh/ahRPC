@@ -4,6 +4,7 @@ import cn.hjh.ahrpc.core.api.RpcRequest;
 import cn.hjh.ahrpc.core.api.RpcResponse;
 import cn.hjh.ahrpc.core.consummr.HttpInvoker;
 import com.alibaba.fastjson.JSON;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @Author : hujh
  * @Date: 2024-04-05 20:43
  */
+@Slf4j
 public class OkHttpInvoker implements HttpInvoker {
 
     final static MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
@@ -33,8 +35,8 @@ public class OkHttpInvoker implements HttpInvoker {
     @Override
     public RpcResponse<?> post(RpcRequest rpcRequest, String url) {
         String reqJson = JSON.toJSONString(rpcRequest);
-        System.out.println("=== reqURL ===" + url);
-        System.out.println("=== reqJson ===" + reqJson);
+        log.debug("=== reqURL ===" + url);
+        log.debug("=== reqJson ===" + reqJson);
         Request request = new Request.Builder()
                 .url(url)
                 .post(RequestBody.create(reqJson, JSON_TYPE))
@@ -42,7 +44,7 @@ public class OkHttpInvoker implements HttpInvoker {
         RpcResponse rpcResponse;
         try {
             String responseJson = client.newCall(request).execute().body().string();
-            System.out.println("=== respJson ===" + responseJson);
+            log.debug("=== respJson ===" + responseJson);
             rpcResponse = JSON.parseObject(responseJson, RpcResponse.class);
         } catch (IOException e) {
             throw new RuntimeException(e);

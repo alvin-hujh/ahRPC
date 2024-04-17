@@ -6,6 +6,7 @@ import cn.hjh.ahrpc.core.meta.ServiceMeta;
 import cn.hjh.ahrpc.core.registry.ChangeListener;
 import cn.hjh.ahrpc.core.registry.Event;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
  * @Author : hujh
  * @Date: 2024-03-19 02:21
  */
+@Slf4j
 public class ZKRegistryCenter implements RegistryCenter {
     private CuratorFramework client = null;
     private TreeCache cache = null;
@@ -41,7 +43,7 @@ public class ZKRegistryCenter implements RegistryCenter {
                 .retryPolicy(policy)
                 .build();
         client.start();
-        System.out.println("=====> ZK client started to server[+" + zkServer + "/" + zkRoot + "] " + " success!");
+        log.info("=====> ZK client started to server[+" + zkServer + "/" + zkRoot + "] " + " success!");
     }
 
     @Override
@@ -49,7 +51,7 @@ public class ZKRegistryCenter implements RegistryCenter {
         if (client != null) {
             cache.close();
             client.close();
-            System.out.println("=====> ZK client stop success!");
+            log.info("=====> ZK client stop success!");
         }
 
     }
@@ -64,9 +66,9 @@ public class ZKRegistryCenter implements RegistryCenter {
             }
             // 创建示例的临时性节点
             String instancePath = servicePath + "/" + instance.toPath();
-            System.out.println("=====> start to register to ZK client server=" + servicePath);
+            log.info("=====> start to register to ZK client server=" + servicePath);
             client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
-            System.out.println("=====> register to ZK client success!");
+            log.info("=====> register to ZK client success!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -83,9 +85,9 @@ public class ZKRegistryCenter implements RegistryCenter {
             }
             // 删除实例节点
             String instancePath = servicePath + "/" + instance.toPath();
-            System.out.println("=====> start to unRegister to ZK client");
+            log.info("=====> start to unRegister to ZK client");
             client.delete().quietly().forPath(instancePath);
-            System.out.println("=====> unRegister to ZK client success!");
+            log.info("=====> unRegister to ZK client success!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -98,12 +100,12 @@ public class ZKRegistryCenter implements RegistryCenter {
         List<InstanceMeta> instanceMetas = null;
         try {
             // 判断服务是否存在
-            System.out.println("=====> start to fetchAll client from ZK client");
+            log.info("=====> start to fetchAll client from ZK client");
             nodes = client.getChildren().forPath(servicePath);
 //            nodes = nodes.stream()
 //                    .map(x -> "http://" + x.replace("_", ":"))
 //                    .collect(Collectors.toList());
-//            System.out.println("=====> fetchAll client from ZK client success = " + nodes);
+//            log.info("=====> fetchAll client from ZK client success = " + nodes);
             instanceMetas = nodes.stream().map(x -> {
                 String[] strs = x.split("_");
                 return InstanceMeta.http(strs[0], Integer.valueOf(strs[1]));

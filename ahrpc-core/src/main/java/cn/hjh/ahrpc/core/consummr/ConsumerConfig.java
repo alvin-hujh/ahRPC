@@ -6,6 +6,7 @@ import cn.hjh.ahrpc.core.api.Router;
 import cn.hjh.ahrpc.core.cluster.RandomRibonLoadBalancer;
 import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.registry.zk.ZKRegistryCenter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -19,6 +20,7 @@ import org.springframework.core.annotation.Order;
  * @Author : hujh
  * @Date: 2024-03-15 00:12
  */
+@Slf4j
 @Configuration
 public class ConsumerConfig {
     @Value("${ahrpc.providers}")
@@ -32,9 +34,9 @@ public class ConsumerConfig {
     @Order(Integer.MIN_VALUE)
     public ApplicationRunner consumerBootstrap_runner(@Autowired ConsumerBootstrap consumerBootstrap) {
         return x -> {
-            System.out.println("===== consumerBootstrap starting ======");
+            log.info("===== consumerBootstrap starting ======");
             consumerBootstrap.start();
-            System.out.println("===== consumerBootstrap started ======");
+            log.info("===== consumerBootstrap started ======");
         };
     }
 

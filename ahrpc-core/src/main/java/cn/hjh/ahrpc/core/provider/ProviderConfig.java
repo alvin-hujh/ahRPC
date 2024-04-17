@@ -2,6 +2,7 @@ package cn.hjh.ahrpc.core.provider;
 
 import cn.hjh.ahrpc.core.api.RegistryCenter;
 import cn.hjh.ahrpc.core.registry.zk.ZKRegistryCenter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,7 @@ import org.springframework.core.annotation.Order;
  * @Author : hujh
  * @Date: 2024-03-10 23:13
  */
+@Slf4j
 @Configuration
 public class ProviderConfig {
 
@@ -37,9 +39,9 @@ public class ProviderConfig {
     @Order(Integer.MIN_VALUE)
     public ApplicationRunner providerBootstrap_runner(@Autowired ProviderBootstrap providerBootstrap) {
         return x -> {
-            System.out.println("===== consumerBootstrap starting ======");
+            log.info("===== consumerBootstrap starting ======");
             providerBootstrap.start();
-            System.out.println("===== consumerBootstrap started ======");
+            log.info("===== consumerBootstrap started ======");
         };
     }
 
