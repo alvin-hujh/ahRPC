@@ -7,6 +7,7 @@ import cn.hjh.ahrpc.core.consummr.http.OkHttpInvoker;
 import cn.hjh.ahrpc.core.meta.InstanceMeta;
 import cn.hjh.ahrpc.core.util.MethodUtils;
 import cn.hjh.ahrpc.core.util.TypeUtils;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 
 import java.lang.reflect.InvocationHandler;
@@ -19,6 +20,7 @@ import java.util.List;
  * @Author : hujh
  * @Date: 2024-03-15 00:26
  */
+@Slf4j
 public class AHInvocationHandler implements InvocationHandler {
     final static MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
 
@@ -48,6 +50,7 @@ public class AHInvocationHandler implements InvocationHandler {
 
         List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
         InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
+        log.info("consumer invoker instance = ${}", instance);
 
         RpcResponse rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
         if (rpcResponse.status) {

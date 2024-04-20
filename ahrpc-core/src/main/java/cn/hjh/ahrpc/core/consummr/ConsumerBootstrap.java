@@ -68,7 +68,7 @@ public class ConsumerBootstrap implements ApplicationContextAware, EnvironmentAw
         for (String name : names) {
             Object bean = applicationContext.getBean(name);
             List<Field> fields = MethodUtils.findAnnotatedField(bean.getClass(), AHConsumer.class);
-            fields.stream().forEach(f -> {
+            fields.forEach(f -> {
                 log.info("====>" + f.getName());
                 try {
                     Class<?> service = f.getType();

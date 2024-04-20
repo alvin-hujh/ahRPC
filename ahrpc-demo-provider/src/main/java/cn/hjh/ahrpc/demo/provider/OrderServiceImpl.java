@@ -3,8 +3,6 @@ package cn.hjh.ahrpc.demo.provider;
 import cn.hjh.ahrpc.core.annotation.AHProvider;
 import cn.hjh.ahrpc.demo.api.Order;
 import cn.hjh.ahrpc.demo.api.OrderService;
-import cn.hjh.ahrpc.demo.api.User;
-import cn.hjh.ahrpc.demo.api.UserService;
 import org.springframework.stereotype.Component;
 
 @Component
