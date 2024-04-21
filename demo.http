@@ -1,6 +1,6 @@
 ### 查询用户
-#POST http://localhost:8081/
-POST http://192.168.2.9:8081/
+POST http://localhost:8081/
+#POST http://192.168.2.9:8081/
 Content-Type: application/json
 
 {
